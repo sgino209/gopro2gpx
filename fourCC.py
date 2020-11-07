@@ -324,6 +324,13 @@ labels = {
 		"ORIN" : Label_TypecString,
 		"ALLD" : LabelEmpty,
 		"ORIO" : Label_TypecString,
+                "GPSA" : LabelEmpty,
+                "CORI" : LabelEmpty,
+                "IORI" : LabelEmpty,
+                "GRAV" : LabelEmpty,
+                "WNDM" : LabelEmpty,
+                "MWET" : LabelEmpty,
+                "AALP" : LabelEmpty,                
   
         # not defined in document
         "YAVG" : LabelEmpty,
