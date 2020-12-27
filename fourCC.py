@@ -324,6 +324,8 @@ labels = {
 		"ORIN" : Label_TypecString,
 		"ALLD" : LabelEmpty,
 		"ORIO" : Label_TypecString,
+                
+                # gopro8 fix
                 "GPSA" : LabelEmpty,
                 "CORI" : LabelEmpty,
                 "IORI" : LabelEmpty,
@@ -332,8 +334,8 @@ labels = {
                 "MWET" : LabelEmpty,
                 "AALP" : LabelEmpty,                
   
-        # not defined in document
-        "YAVG" : LabelEmpty,
+                # not defined in document
+                "YAVG" : LabelEmpty,
 		"SCEN" : LabelEmpty,
 		"HUES" : LabelEmpty,
 		"UNIF" : LabelEmpty,
@@ -354,8 +356,22 @@ labels = {
 		"SCPR" : LabelEmpty, ## Karma Drone
 		"LNED" : LabelEmpty, ## Karma Drone
 		"CYTS" : LabelEmpty, ## Karma Drone
-		"CSEN" : LabelEmpty ## Karma Drone
-	
+		"CSEN" : LabelEmpty, ## Karma Drone
+
+                # misc keys
+		"SCEN" : LabelEmpty,
+		"HUES" : LabelEmpty,
+		"FACE" : LabelEmpty,
+		"MTRX" : LabelEmpty,
+		"ORIN" : LabelEmpty,
+		"ORIO" : LabelEmpty,
+
+		# hero 9 fix
+		"MSKP" : LabelEmpty,
+		"LRVO" : LabelEmpty,
+		"LRVS" : LabelEmpty,
+		"LSKP" : LabelEmpty,
+		"VPTS" : LabelEmpty
 }
 
 def Manage(klvdata):
