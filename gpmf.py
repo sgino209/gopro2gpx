@@ -95,7 +95,11 @@ class Parser:
 
         while offset < len(data):
             
-            klv = KLVData(data,offset)
+            try:
+                klv = KLVData(data,offset)
+            except:
+                offset += 8
+                continue
             if not klv.skip():
                 klvlist.append(klv)
                 if self.verbose == 3:
