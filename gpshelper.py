@@ -12,7 +12,7 @@ import time
 import os
 
 class GPSPoint:
-    def __init__(self, latitude=0.0, longitude=0.0, elevation=0.0, time=datetime.fromtimestamp(time.time()), speed=0.0):
+    def __init__(self, latitude=0.0, longitude=0.0, elevation=0.0, time=datetime.fromtimestamp(time.time()), speed=0.0, distance=0.0, direction=0.0, precision=9999, fix=0, accl=0, gyro=0):
         self.latitude = latitude
         self.longitude = longitude
         self.elevation = elevation
@@ -25,7 +25,12 @@ class GPSPoint:
         self.temperature = 0
         self.atemp = 0
         self.power = 0
-        self.distance = 0
+        self.distance = distance
+        self.direction = direction
+        self.precision = precision
+        self.fix = fix
+        self.accl = accl
+        self.gyro = gyro
         self.left_pedal_smoothness = 0
         self.left_torque_effectiveness = 0
 
@@ -71,7 +76,7 @@ def generate_GPX(points, trk_name="exercise"):
   	# - doesn't support hr=0
   	# - doesn't support tags:
   	# <gpxtpx:speed>1.0</gpxtpx:speed>
-    # <gpxtpx:distance>0</gpxtpx:distance>
+        # <gpxtpx:distance>0</gpxtpx:distance>
 
     xml += "<gpx " + " ".join(gpx_attr) + ">\r\n"
 
@@ -97,6 +102,11 @@ def generate_GPX(points, trk_name="exercise"):
         cadence = p.cad
         speed = p.speed
         distance = p.distance
+        direction = p.direction
+        precision = p.precision
+        fix = p.fix
+        accl = p.accl
+        gyro = p.gyro
 
         pts  = '	<trkpt lat="%s" lon="%s">\r\n' % (p.latitude, p.longitude)
         pts += '		<ele>%s</ele>\r\n' % p.elevation
@@ -107,6 +117,11 @@ def generate_GPX(points, trk_name="exercise"):
         pts += '		    <gpxtpx:cad>%s</gpxtpx:cad>\r\n' % cadence
         pts += '		    <gpxtpx:speed>%s</gpxtpx:speed>\r\n' % speed
         pts += '		    <gpxtpx:distance>%s</gpxtpx:distance>\r\n' % distance
+        pts += '		    <gpxtpx:direction>%s</gpxtpx:direction>\r\n' % direction
+        pts += '		    <gpxtpx:precision>%s</gpxtpx:precision>\r\n' % precision
+        pts += '		    <gpxtpx:accl>%s,%s,%s</gpxtpx:accl>\r\n' % (accl.x, accl.y, accl.z)
+        pts += '		    <gpxtpx:gyro>%s,%s,%s</gpxtpx:gyro>\r\n' % (gyro.x, gyro.y, gyro.z)
+        pts += '		    <gpxtpx:fix>%s</gpxtpx:fix>\r\n' % fix
         pts += '	    </gpxtpx:TrackPointExtension>\r\n'
         pts += '		<gpxx:TrackPointExtension/>\r\n' ## new
     	#pts += '        <power>%s</power>\r\n' % power

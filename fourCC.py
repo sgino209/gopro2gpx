@@ -375,5 +375,10 @@ labels = {
 }
 
 def Manage(klvdata):
-	return labels[klvdata.fourCC]().Build(klvdata)
+	if klvdata.fourCC in labels.keys():
+		return labels[klvdata.fourCC]().Build(klvdata)
+	else:
+		issue_url = "https://github.com/sgino209/gopro2gpx/issues/new"
+		print("Warning. fourCC Label '%s' not found. Please summit a issue to: %s" % (klvdata.fourCC,issue_url ))
+		return False
 
