@@ -43,7 +43,7 @@ def UTCTime(timedata):
     
     return timedata.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-def generate_GPX(points, trk_name="exercise"):
+def generate_GPX(points, start_time, trk_name="exercise"):
 
     """
     Creates a GPX in 1.1 Format
@@ -81,7 +81,7 @@ def generate_GPX(points, trk_name="exercise"):
     xml += "<gpx " + " ".join(gpx_attr) + ">\r\n"
 
     xml += "<metadata>\r\n"
-    xml += "  <time>%s</time>\r\n" % UTCTime(points[0].time) # first point !
+    xml += "  <time>%s</time>\r\n" % start_time
     xml += "</metadata>\r\n"
     xml += "<trk>\r\n"
     xml += "  <name>%s</name>\r\n" % trk_name

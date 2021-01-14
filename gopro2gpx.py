@@ -41,6 +41,7 @@ def BuildGPSPoints(data, skip=False, quiet=False):
     SCAL = fourCC.XYZData(1.0, 1.0, 1.0)
     GPSU = None
     SYST = fourCC.SYSTData(0, 0)
+    start_time = None
 
     stats = {
         'ok': 0,
@@ -69,6 +70,8 @@ def BuildGPSPoints(data, skip=False, quiet=False):
         
         elif d.fourCC == 'GPSU':
             GPSU = d.data
+            if not start_time:
+                start_time = gpshelper.UTCTime(datetime.fromtimestamp(time.mktime(GPSU)))
         
         elif d.fourCC == 'GPSP':
             GPSP = d.data
@@ -194,7 +197,7 @@ def BuildGPSPoints(data, skip=False, quiet=False):
     print("Total points:\t\t%5d" % total_points)
     print("--------------------------")
     
-    return(points)
+    return points, start_time
 
 def parseArgs():
     parser = argparse.ArgumentParser()
@@ -220,7 +223,7 @@ def main():
 
     # build some funky tracks from camera GPS
 
-    points = BuildGPSPoints(data, skip=args.skip, quiet=args.quiet)
+    points, start_time = BuildGPSPoints(data, skip=args.skip, quiet=args.quiet)
 
     if len(points) == 0:
         print("Can't create file. No GPS info in %s. Exitting" % args.file)
@@ -230,7 +233,7 @@ def main():
     with open("%s.kml" % args.outputfile , "w+") as fd:
         fd.write(kml)
 
-    gpx = gpshelper.generate_GPX(points, trk_name="gopro7-track")
+    gpx = gpshelper.generate_GPX(points, start_time, trk_name="gopro7-track")
     with open("%s.gpx" % args.outputfile , "w+") as fd:
         fd.write(gpx)
 
