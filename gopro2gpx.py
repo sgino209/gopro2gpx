@@ -23,10 +23,10 @@ from config import setup_environment
 import fourCC
 import gpmf
 import gpshelper
-from haversine import haversine, Unit
+from math import atan2, cos, sin, degrees
 from geopy import distance
 
-def BuildGPSPoints(data, skip=False, quiet=False):
+def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
     """
     Data comes UNSCALED so we have to do: Data / Scale.
     Do a finite state machine to process the labels.
@@ -63,7 +63,7 @@ def BuildGPSPoints(data, skip=False, quiet=False):
     lat_prev = 0
     lon_prev = 0
     speed_prev = 0
-    for d in data:
+    for idx,d in enumerate(data):
         
         if d.fourCC == 'SCAL':
             SCAL = d.data
@@ -130,10 +130,11 @@ def BuildGPSPoints(data, skip=False, quiet=False):
                     stats['badacclskip'] += 1
                     continue
 
-            dist_haversine = haversine((lat_prev, lon_prev), (gpsdata.lat, gpsdata.lon), Unit.METERS) if lat_prev*lon_prev > 0 else 0 
+            direction = degrees(atan2(cos(lat_prev)*sin(gpsdata.lat)-sin(lat_prev)*cos(gpsdata.lat)*cos(gpsdata.lon-lon_prev), sin(gpsdata.lon-lon_prev)*cos(gpsdata.lat))) % 360
             dist_2d_geopy = distance.distance((lat_prev, lon_prev), (gpsdata.lat, gpsdata.lon)).m if lat_prev*lon_prev > 0 else 0
-            lat_prev = gpsdata.lat
-            lon_prev = gpsdata.lon
+            if idx % prev_window == 0:
+                lat_prev = gpsdata.lat
+                lon_prev = gpsdata.lon
             speed_prev = gpsdata.speed
 
             p = gpshelper.GPSPoint(gpsdata.lat, 
@@ -142,7 +143,7 @@ def BuildGPSPoints(data, skip=False, quiet=False):
                                    datetime.fromtimestamp(time.mktime(GPSU)),
                                    gpsdata.speed, 
                                    dist_2d_geopy,
-                                   dist_haversine,
+                                   direction,
                                    GPSP,
                                    GPSFIX,
                                    ACCL,
@@ -205,6 +206,7 @@ def parseArgs():
     parser.add_argument("-b", "--binary", help="read data from bin file", action="store_true")
     parser.add_argument("-s", "--skip", help="Skip bad points (GPSFIX=0)", action="store_true", default=False)
     parser.add_argument("-q", "--quiet", help="Quiet mode", action="store_true", default=False)
+    parser.add_argument("-a", "--speed_dir_window", help="average window size for calculating speed and direction", default=1)
     parser.add_argument("file", help="Video file or binary metadata dump")
     parser.add_argument("outputfile", help="output file. builds KML and GPX")
     args = parser.parse_args()
@@ -223,7 +225,7 @@ def main():
 
     # build some funky tracks from camera GPS
 
-    points, start_time = BuildGPSPoints(data, skip=args.skip, quiet=args.quiet)
+    points, start_time = BuildGPSPoints(data, prev_window=int(args.speed_dir_window), skip=args.skip, quiet=args.quiet)
 
     if len(points) == 0:
         print("Can't create file. No GPS info in %s. Exitting" % args.file)
