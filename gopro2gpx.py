@@ -26,6 +26,8 @@ import gpshelper
 from math import atan2, cos, sin, degrees
 from geopy import distance
 
+meter_per_second_to_knots = lambda x: x * 1.944
+
 def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
     """
     Data comes UNSCALED so we have to do: Data / Scale.
@@ -112,13 +114,13 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
 
             data = [ float(x) / float(y) for x,y in zip( d.data._asdict().values() ,list(SCAL) ) ]
             gpsdata = fourCC.GPSData._make(data)
-            acceleration = gpsdata.speed - speed_prev
+            acceleration = speed_kn - speed_prev
 
-            if abs(gpsdata.speed) > SPEED_thr:
+            if abs(speed_kn) > SPEED_thr:
                 stats['badspeed'] += 1
                 if skip:
                     if not quiet:
-                        print("Warning: Skipping point due bad speed, abs(SPEED)=%d>%d" % (abs(gpsdata.speed), SPEED_thr))
+                        print("Warning: Skipping point due bad speed, abs(SPEED)=%d>%d" % (abs(speed_kn), SPEED_thr))
                     stats['badspeedskip'] += 1
                     continue
             
@@ -130,18 +132,19 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
                     stats['badacclskip'] += 1
                     continue
 
+            speed_kn = meter_per_second_to_knots(gpsdata.speed)
             direction = degrees(atan2(cos(lat_prev)*sin(gpsdata.lat)-sin(lat_prev)*cos(gpsdata.lat)*cos(gpsdata.lon-lon_prev), sin(gpsdata.lon-lon_prev)*cos(gpsdata.lat))) % 360
             dist_2d_geopy = distance.distance((lat_prev, lon_prev), (gpsdata.lat, gpsdata.lon)).m if lat_prev*lon_prev > 0 else 0
             if idx % prev_window == 0:
                 lat_prev = gpsdata.lat
                 lon_prev = gpsdata.lon
-            speed_prev = gpsdata.speed
+            speed_prev = speed_kn
 
             p = gpshelper.GPSPoint(gpsdata.lat, 
                                    gpsdata.lon, 
                                    gpsdata.alt, 
                                    datetime.fromtimestamp(time.mktime(GPSU)),
-                                   gpsdata.speed, 
+                                   speed_kn,
                                    dist_2d_geopy,
                                    direction,
                                    GPSP,
