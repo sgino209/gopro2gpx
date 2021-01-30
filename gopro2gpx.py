@@ -23,7 +23,7 @@ from config import setup_environment
 import fourCC
 import gpmf
 import gpshelper
-from math import atan2, cos, sin, degrees
+from math import atan2, cos, sin, degrees, radians
 from geopy import distance
 
 meter_per_second_to_knots = lambda x: x * 1.944
@@ -133,8 +133,14 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
                     stats['badacclskip'] += 1
                     continue
 
-            direction = degrees(atan2(cos(lat_prev)*sin(gpsdata.lat)-sin(lat_prev)*cos(gpsdata.lat)*cos(gpsdata.lon-lon_prev), sin(gpsdata.lon-lon_prev)*cos(gpsdata.lat))) % 360
+            # Bearing calculation:
+            direction_y = sin(radians(gpsdata.lon) - radians(lon_prev)) * cos(radians(gpsdata.lat))
+            direction_x = cos(radians(lat_prev)) * sin(radians(gpsdata.lat)) - sin(radians(lat_prev)) * cos(radians(gpsdata.lat)) * cos(radians(gpsdata.lon) - radians(lon_prev))
+            direction = (degrees(atan2(direction_y, direction_x)) + 360) % 360
+
+            # Distance calculation:
             dist_2d_geopy = distance.distance((lat_prev, lon_prev), (gpsdata.lat, gpsdata.lon)).m if lat_prev*lon_prev > 0 else 0
+
             if idx % prev_window == 0:
                 lat_prev = gpsdata.lat
                 lon_prev = gpsdata.lon
