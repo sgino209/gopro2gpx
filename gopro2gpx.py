@@ -58,6 +58,8 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
         'empty' : 0
     }
 
+    SPEED_skip_en = True
+    ACCL_skip_en = False
     GPSP_thr = 500  # bad precision
     ACCL_thr = 10   # bad acceleration
     SPEED_thr = 100 # bad speed
@@ -117,7 +119,7 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
             speed_kn = meter_per_second_to_knots(gpsdata.speed)
             acceleration = speed_kn - speed_prev
 
-            if abs(speed_kn) > SPEED_thr:
+            if SPEED_skip_en and (abs(speed_kn) > SPEED_thr):
                 stats['badspeed'] += 1
                 if skip:
                     if not quiet:
@@ -125,7 +127,7 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
                     stats['badspeedskip'] += 1
                     continue
             
-            if abs(acceleration) > ACCL_thr:
+            if ACCL_skip_en and (abs(acceleration) > ACCL_thr):
                 stats['badaccl'] += 1
                 if skip:
                     if not quiet:
