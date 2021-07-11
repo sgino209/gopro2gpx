@@ -74,8 +74,10 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
         
         elif d.fourCC == 'GPSU':
             GPSU = d.data
-            if not start_time:
+            if not start_time and (GPSFIX != 0):
                 start_time = gpshelper.UTCTime(datetime.fromtimestamp(time.mktime(GPSU)))
+                if not quiet:
+                    print("start_time change to %s" % start_time)
         
         elif d.fourCC == 'GPSP':
             GPSP = d.data
