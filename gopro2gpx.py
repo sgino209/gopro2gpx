@@ -18,7 +18,7 @@ import subprocess
 import sys
 import time
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import setup_environment
 import fourCC
 import gpmf
@@ -44,6 +44,7 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
     GPSU = None
     SYST = fourCC.SYSTData(0, 0)
     start_time = None
+    start_time_lag_sec = 0
 
     stats = {
         'ok': 0,
@@ -68,16 +69,19 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
     lon_prev = 0
     speed_prev = 0
     for idx,d in enumerate(data):
-        
+
         if d.fourCC == 'SCAL':
             SCAL = d.data
         
         elif d.fourCC == 'GPSU':
             GPSU = d.data
-            if not start_time and (GPSFIX != 0):
-                start_time = gpshelper.UTCTime(datetime.fromtimestamp(time.mktime(GPSU)))
-                if not quiet:
-                    print("start_time change to %s" % start_time)
+            if not start_time:
+                if GPSFIX == 0:
+                    start_time_lag_sec += 1
+                else:
+                    start_time = gpshelper.UTCTime(datetime.fromtimestamp(time.mktime(GPSU))-timedelta(seconds=start_time_lag_sec))
+                    if not quiet:
+                        print("start_time change to %s (lag=%dsec)" % (start_time, start_time_lag_sec))
         
         elif d.fourCC == 'GPSP':
             GPSP = d.data
