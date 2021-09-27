@@ -51,16 +51,24 @@ ffmpeg = /path/to/ffmpeg
 ffprobe = /path/to/ffprobe
 ```
 
- 4. Run it (skip bad points, show the labels debug, create `hero6.kml` and `hero6.gpx` files)
-
+4. The script can then be invoced with
  ```shell
-    % gopro2gpx -s -vvv samples/hero6.mp4 hero6
+ gopro2gpx
  ```
-5. Custom run
+or
+ ```shell
+    % python3 -m gopro2gpx
+ ```
+(exchange `python3` with your specific python installation)
+
+E.g. to run it on the example data (skip bad points, show the labels debug, create `hero6.kml` and `hero6.gpx` files):
+
+```shell
+gopro2gpx -s -vvv samples/hero6.mp4 hero6
 ```
-cd gopro2gpx
-export PATH=$PATH:/usr/local/opt/ffmpeg/bin
- python3 -m gopro2gpx.gopro2gpx -vvv samples/8/GH010159.MP4 output.bin
+5. With custom path for FFMPEG
+```
+gopro2gpx -vvv samples/8/GH010159.MP4 output.bin
 ```
 
 # Arguments and options

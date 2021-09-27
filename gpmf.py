@@ -40,7 +40,10 @@ class Parser:
         if not os.path.exists(self.file):
             raise FileNotFoundError("Can't open %s" % self.file)
 
-        track_number, lineinfo = self.ffmtools.getMetadataTrack(self.file)
+        try:
+            track_number, lineinfo = self.ffmtools.getMetadataTrack(self.file)
+        except TypeError:
+            track_number, lineinfo = self.ffmtools.getMetadataTrackFromJSON(self.file)
         if not track_number:
             raise Exception("File %s doesn't have any metadata" % self.file)
 
