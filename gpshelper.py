@@ -31,6 +31,7 @@ class GPSPoint:
         self.fix = fix
         self.accl = accl
         self.gyro = gyro
+        self.heel = 0
         self.left_pedal_smoothness = 0
         self.left_torque_effectiveness = 0
 
@@ -107,6 +108,7 @@ def generate_GPX(points, start_time, trk_name="exercise"):
         fix = p.fix
         accl = p.accl
         gyro = p.gyro
+        heel = p.heel
 
         pts  = '	<trkpt lat="%s" lon="%s">\r\n' % (p.latitude, p.longitude)
         pts += '		<ele>%s</ele>\r\n' % p.elevation
@@ -121,6 +123,7 @@ def generate_GPX(points, start_time, trk_name="exercise"):
         pts += '		    <gpxtpx:precision>%s</gpxtpx:precision>\r\n' % precision
         pts += '		    <gpxtpx:accl>%s,%s,%s</gpxtpx:accl>\r\n' % (accl.x, accl.y, accl.z)
         pts += '		    <gpxtpx:gyro>%s,%s,%s</gpxtpx:gyro>\r\n' % (gyro.x, gyro.y, gyro.z)
+        pts += '		    <gpxtpx:heel>%s</gpxtpx:heel>\r\n' % heel
         pts += '		    <gpxtpx:fix>%s</gpxtpx:fix>\r\n' % fix
         pts += '	    </gpxtpx:TrackPointExtension>\r\n'
         pts += '		<gpxx:TrackPointExtension/>\r\n' ## new

@@ -25,6 +25,9 @@ import gpmf
 import gpshelper
 from math import atan2, cos, sin, degrees, radians
 from geopy import distance
+import numpy as np
+from ahrs import Quaternion
+from ahrs.filters import Madgwick
 
 meter_per_second_to_knots = lambda x: x * 1.944
 
@@ -230,6 +233,15 @@ def parseArgs():
 
     return args        
 
+def heel_calc(points, freq_hz):
+    madgwick = Madgwick(acc=np.array([p.accl for p in points]),
+                        gyr=np.array([p.gyro for p in points]),
+                        frequency=freq_hz,
+                        q0=None)
+    euler_angles = np.array([np.degrees(Quaternion(_).to_angles()) for _ in madgwick.Q])
+    heel = euler_angles[:, 1]
+    return heel
+
 def main():
     args = parseArgs()
     config = setup_environment(args)
@@ -243,6 +255,10 @@ def main():
     # build some funky tracks from camera GPS
 
     points, start_time = BuildGPSPoints(data, prev_window=int(args.speed_dir_window), skip=args.skip, quiet=args.quiet)
+
+    heel = heel_calc(points, 1.)
+    for p, h in zip(points, heel):
+        p.heel = h
 
     if len(points) == 0:
         print("Can't create file. No GPS info in %s. Exitting" % args.file)
