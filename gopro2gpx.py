@@ -256,13 +256,13 @@ def main():
 
     points, start_time = BuildGPSPoints(data, prev_window=int(args.speed_dir_window), skip=args.skip, quiet=args.quiet)
 
+    if len(points) == 0:
+        print("Can't create file. No GPS info in %s. Exiting" % args.file)
+        sys.exit(0)
+
     heel = heel_calc(points, 1.)
     for p, h in zip(points, heel):
         p.heel = h
-
-    if len(points) == 0:
-        print("Can't create file. No GPS info in %s. Exitting" % args.file)
-        sys.exit(0)
 
     kml = gpshelper.generate_KML(points)
     with open("%s.kml" % args.outputfile , "w+") as fd:
