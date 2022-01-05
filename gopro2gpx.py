@@ -97,7 +97,7 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
                     continue
         
         elif d.fourCC == 'ACCL':
-            ACCL = d.data
+            ACCL = fourCC.XYZData(d.data.x/SCAL, d.data.y/SCAL, d.data.z/SCAL)
         
         elif d.fourCC == 'GYRO':
             GYRO = d.data
