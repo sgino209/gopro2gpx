@@ -206,9 +206,11 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
                 stats['ok'] += 1
                         
     # Validate first point (shall be relatively close to its neighbor):
-    first_point_d = np.sqrt((points[0].latitude - points[1].latitude)**2 + (points[0].longitude - points[1].longitude)**2)
-    if first_point_d > np.sqrt(SPEED_thr):
-        del points[0]
+    first_point_d = -1
+    if points:
+        first_point_d = np.sqrt((points[0].latitude - points[1].latitude)**2 + (points[0].longitude - points[1].longitude)**2)
+        if first_point_d > np.sqrt(SPEED_thr):
+            del points[0]
 
     print("-- stats -----------------")
     total_points =0
