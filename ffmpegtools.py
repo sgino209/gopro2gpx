@@ -126,6 +126,7 @@ class FFMpegTools:
     def getMetadata(self, track, fname):
 
         output_file = "-"
-        args = [ '-y', '-i', fname, '-codec', 'copy', '-map', '0:%d' % track, '-f', 'rawvideo', output_file ] 
+        mem_args = [ '-preset', 'ultrafast', '-rc-lookahead', '6' ]
+        args = mem_args + [ '-y', '-i', fname, '-codec', 'copy', '-map', '0:%d' % track, '-f', 'rawvideo', output_file ] 
         output = self.runCmdRaw(self.config.ffmpeg_cmd, args)
         return(output)
