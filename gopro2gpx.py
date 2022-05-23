@@ -31,7 +31,7 @@ from ahrs.filters import Madgwick
 
 meter_per_second_to_knots = lambda x: x * 1.944
 
-def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
+def BuildGPSPoints(data, params):
     """
     Data comes UNSCALED so we have to do: Data / Scale.
     Do a finite state machine to process the labels.
@@ -62,12 +62,12 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
         'empty' : 0
     }
 
-    SPEED_skip_en = True
-    ACCL_skip_en = False
-    GPSP_thr = 500  # bad precision
-    ACCL_thr = 10   # bad acceleration
-    SPEED_thr = 100 # bad speed
-    GPSFIX = 0 # no lock.
+    SPEED_skip_en = params['SPEED_skip_en']
+    ACCL_skip_en = params['ACCL_skip_en']
+    GPSP_thr = params['GPSP_thr']    # bad precision
+    ACCL_thr = params['ACCL_thr']    # bad acceleration
+    SPEED_thr = params['SPEED_thr']  # bad speed
+    GPSFIX = 0  # no lock.
     lat_prev = 0
     lon_prev = 0
     speed_prev = 0
@@ -83,15 +83,15 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
                     start_time_lag_sec += 1
                 else:
                     start_time = gpshelper.UTCTime(datetime.fromtimestamp(time.mktime(GPSU))-timedelta(seconds=start_time_lag_sec))
-                    if not quiet:
+                    if not params['quiet']:
                         print("start_time change to %s (lag=%dsec)" % (start_time, start_time_lag_sec))
         
         elif d.fourCC == 'GPSP':
             GPSP = d.data
             if GPSP > GPSP_thr:
                 stats['badprecision'] += 1
-                if skip:
-                    if not quiet:
+                if params['skip']:
+                    if not params['quiet']:
                         print("Warning: Skipping point due bad precision, GPSP=%d>%d" % (GPSP, GPSP_thr))
                     stats['badprecisionskip'] += 1
                     continue
@@ -104,21 +104,21 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
         
         elif d.fourCC == 'GPSF':
             if d.data != GPSFIX:
-                if not quiet:
+                if not params['quiet']:
                     print("GPSFIX change to %s [%s]" % (d.data,fourCC.LabelGPSF.xlate[d.data]))
             GPSFIX = d.data
         
         elif d.fourCC == 'GPS5':
             if d.data.lon == d.data.lat == d.data.alt == 0:
-                if not quiet:
+                if not params['quiet']:
                     print("Warning: Skipping empty point")
                 stats['empty'] += 1
                 continue
 
             if GPSFIX == 0:
                 stats['badfix'] += 1
-                if skip:
-                    if not quiet:
+                if params['skip']:
+                    if not params['quiet']:
                         print("Warning: Skipping point due GPSFIX==0")
                     stats['badfixskip'] += 1
                     continue
@@ -130,16 +130,16 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
 
             if SPEED_skip_en and (abs(speed_kn) > SPEED_thr):
                 stats['badspeed'] += 1
-                if skip:
-                    if not quiet:
+                if params['skip']:
+                    if not params['quiet']:
                         print("Warning: Skipping point due bad speed, abs(SPEED)=%d>%d" % (abs(speed_kn), SPEED_thr))
                     stats['badspeedskip'] += 1
                     continue
             
             if ACCL_skip_en and (abs(acceleration) > ACCL_thr):
                 stats['badaccl'] += 1
-                if skip:
-                    if not quiet:
+                if params['skip']:
+                    if not params['quiet']:
                         print("Warning: Skipping point due bad acceleration, abs(ACCL)=%d>%d" % (abs(acceleration), ACCL_thr))
                     stats['badacclskip'] += 1
                     continue
@@ -152,7 +152,7 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
             # Distance calculation:
             dist_2d_geopy = distance.distance((lat_prev, lon_prev), (gpsdata.lat, gpsdata.lon)).m if lat_prev*lon_prev > 0 else 0
 
-            if idx % prev_window == 0:
+            if idx % params['prev_window'] == 0:
                 lat_prev = gpsdata.lat
                 lon_prev = gpsdata.lon
             speed_prev = speed_kn
@@ -180,15 +180,15 @@ def BuildGPSPoints(data, prev_window=1, skip=False, quiet=False):
             # KARMA GPRI info
 
             if d.data.lon == d.data.lat == d.data.alt == 0:
-                if not quiet:
+                if not params['quiet']:
                     print("Warning: Skipping empty point")
                 stats['empty'] += 1
                 continue
 
             if GPSFIX == 0:
                 stats['badfix'] += 1
-                if skip:
-                    if not quiet:
+                if params['skip']:
+                    if not params['quiet']:
                         print("Warning: Skipping point due GPSFIX==0")
                     stats['badfixskip'] += 1
                     continue
@@ -235,6 +235,11 @@ def parseArgs():
     parser.add_argument("-s", "--skip", help="Skip bad points (GPSFIX=0)", action="store_true", default=False)
     parser.add_argument("-q", "--quiet", help="Quiet mode", action="store_true", default=False)
     parser.add_argument("-a", "--speed_dir_window", help="average window size for calculating speed and direction", default=1)
+    parser.add_argument("-c", "--speed_skip_en", help="speed skip enable", default=1)
+    parser.add_argument("-d", "--accl_skip_en", help="acceleration skip enable", default=0)
+    parser.add_argument("-e", "--gpsp_thr", help="maximal allowed GPSP, higher values are excluded", default=500)
+    parser.add_argument("-f", "--accl_thr", help="maximal allowed acceleration [Kn diff], higher values are excluded", default=10)
+    parser.add_argument("-g", "--speed_thr", help="maximal allowed speed [Kn], higher values are excluded", default=100)
     parser.add_argument("file", help="Video file or binary metadata dump")
     parser.add_argument("outputfile", help="output file. builds KML and GPX")
     args = parser.parse_args()
@@ -262,7 +267,18 @@ def main():
 
     # build some funky tracks from camera GPS
 
-    points, start_time = BuildGPSPoints(data, prev_window=int(args.speed_dir_window), skip=args.skip, quiet=args.quiet)
+    params = {
+        'prev_window': int(args.speed_dir_window),
+        'SPEED_skip_en': bool(int(args.speed_skip_en)),
+        'ACCL_skip_en': bool(int(args.accl_skip_en)),
+        'GPSP_thr': int(args.gpsp_thr),
+        'ACCL_thr': int(args.accl_thr),
+        'SPEED_thr': int(args.speed_thr),
+        'skip': args.skip,
+        'quiet': args.quiet
+    }
+
+    points, start_time = BuildGPSPoints(data, params)
 
     if len(points) == 0:
         print("Can't create file. No GPS info in %s. Exiting" % args.file)
