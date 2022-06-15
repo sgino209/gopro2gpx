@@ -70,6 +70,7 @@ def BuildGPSPoints(data, params):
     GPSFIX = 0  # no lock.
     lat_prev = 0
     lon_prev = 0
+    idx_prev = 0
     speed_prev = 0
     for idx,d in enumerate(data):
 
@@ -123,8 +124,8 @@ def BuildGPSPoints(data, params):
                     stats['badfixskip'] += 1
                     continue
 
-            data = [ float(x) / float(y) for x,y in zip( d.data._asdict().values() ,list(SCAL) ) ]
-            gpsdata = fourCC.GPSData._make(data)
+            data_ = [ float(x) / float(y) for x,y in zip( d.data._asdict().values() ,list(SCAL) ) ]
+            gpsdata = fourCC.GPSData._make(data_)
             speed_kn = meter_per_second_to_knots(gpsdata.speed)
             acceleration = speed_kn - speed_prev
 
@@ -134,10 +135,6 @@ def BuildGPSPoints(data, params):
                     if not params['quiet']:
                         print("Warning: Skipping point due bad speed, abs(SPEED)=%d>%d" % (abs(speed_kn), SPEED_thr))
                     stats['badspeedskip'] += 1
-                    if idx % params['prev_window'] == 0:
-                        lat_prev = gpsdata.lat
-                        lon_prev = gpsdata.lon
-                    continue
             
             if ACCL_skip_en and (abs(acceleration) > ACCL_thr):
                 stats['badaccl'] += 1
@@ -145,10 +142,6 @@ def BuildGPSPoints(data, params):
                     if not params['quiet']:
                         print("Warning: Skipping point due bad acceleration, abs(ACCL)=%d>%d" % (abs(acceleration), ACCL_thr))
                     stats['badacclskip'] += 1
-                    if idx % params['prev_window'] == 0:
-                        lat_prev = gpsdata.lat
-                        lon_prev = gpsdata.lon
-                    continue
 
             # Bearing calculation:
             direction_y = sin(radians(gpsdata.lon) - radians(lon_prev)) * cos(radians(gpsdata.lat))
@@ -158,9 +151,11 @@ def BuildGPSPoints(data, params):
             # Distance calculation:
             dist_2d_geopy = distance.distance((lat_prev, lon_prev), (gpsdata.lat, gpsdata.lon)).m if lat_prev*lon_prev > 0 else 0
 
-            if idx % params['prev_window'] == 0:
+            if (idx_prev == 0) or (idx - idx_prev) >= params['prev_window']:
                 lat_prev = gpsdata.lat
                 lon_prev = gpsdata.lon
+                idx_prev = idx
+
             speed_prev = speed_kn
 
             p = gpshelper.GPSPoint(gpsdata.lat, 
@@ -178,9 +173,9 @@ def BuildGPSPoints(data, params):
             stats['ok'] += 1
 
         elif d.fourCC == 'SYST':
-            data = [ float(x) / float(y) for x,y in zip( d.data._asdict().values() ,list(SCAL) ) ]
-            if data[0] != 0 and data[1] != 0:
-                SYST = fourCC.SYSTData._make(data)
+            data_ = [ float(x) / float(y) for x,y in zip( d.data._asdict().values() ,list(SCAL) ) ]
+            if data_[0] != 0 and data_[1] != 0:
+                SYST = fourCC.SYSTData._make(data_)
 
         elif d.fourCC == 'GPRI':
             # KARMA GPRI info
@@ -199,8 +194,8 @@ def BuildGPSPoints(data, params):
                     stats['badfixskip'] += 1
                     continue
                     
-            data = [ float(x) / float(y) for x,y in zip( d.data._asdict().values() ,list(SCAL) ) ]
-            gpsdata = fourCC.KARMAGPSData._make(data)
+            data_ = [ float(x) / float(y) for x,y in zip( d.data._asdict().values() ,list(SCAL) ) ]
+            gpsdata = fourCC.KARMAGPSData._make(data_)
             
             if SYST.seconds != 0 and SYST.miliseconds != 0:
                 p = gpshelper.GPSPoint(gpsdata.lat, 
@@ -210,7 +205,7 @@ def BuildGPSPoints(data, params):
                                        gpsdata.speed) 
                 points.append(p)
                 stats['ok'] += 1
-                        
+
     # Validate first point (shall be relatively close to its neighbor):
     first_point_d = -1
     if points and len(points) > 2:
