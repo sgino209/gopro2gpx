@@ -134,6 +134,9 @@ def BuildGPSPoints(data, params):
                     if not params['quiet']:
                         print("Warning: Skipping point due bad speed, abs(SPEED)=%d>%d" % (abs(speed_kn), SPEED_thr))
                     stats['badspeedskip'] += 1
+                    if idx % params['prev_window'] == 0:
+                        lat_prev = gpsdata.lat
+                        lon_prev = gpsdata.lon
                     continue
             
             if ACCL_skip_en and (abs(acceleration) > ACCL_thr):
@@ -142,6 +145,9 @@ def BuildGPSPoints(data, params):
                     if not params['quiet']:
                         print("Warning: Skipping point due bad acceleration, abs(ACCL)=%d>%d" % (abs(acceleration), ACCL_thr))
                     stats['badacclskip'] += 1
+                    if idx % params['prev_window'] == 0:
+                        lat_prev = gpsdata.lat
+                        lon_prev = gpsdata.lon
                     continue
 
             # Bearing calculation:
