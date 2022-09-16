@@ -136,7 +136,7 @@ def BuildGPSPoints(data, params):
                         print("Warning: Skipping point due bad speed, abs(SPEED)=%d>%d" % (abs(speed_kn), SPEED_thr))
                     stats['badspeedskip'] += 1
                     continue
-            
+
             if ACCL_skip_en and (abs(acceleration) > ACCL_thr):
                 stats['badaccl'] += 1
                 if params['skip']:
@@ -240,6 +240,7 @@ def parseArgs():
     parser.add_argument("-a", "--speed_dir_window", help="average window size for calculating speed and direction", default=1)
     parser.add_argument("-c", "--speed_skip_en", help="speed skip enable", default=1)
     parser.add_argument("-d", "--accl_skip_en", help="acceleration skip enable", default=0)
+    parser.add_argument("-x", "--heel_skip_en", help="heel skip enable", default=0)
     parser.add_argument("-e", "--gpsp_thr", help="maximal allowed GPSP, higher values are excluded", default=500)
     parser.add_argument("-f", "--accl_thr", help="maximal allowed acceleration [Kn diff], higher values are excluded", default=10)
     parser.add_argument("-g", "--speed_thr", help="maximal allowed speed [Kn], higher values are excluded", default=100)
@@ -289,7 +290,7 @@ def main():
 
     heel = heel_calc(points, 1.)
     for p, h in zip(points, heel):
-        p.heel = h
+        p.heel = 0 if args.heel_skip_en else h
 
     kml = gpshelper.generate_KML(points)
     with open("%s.kml" % args.outputfile , "w+") as fd:
